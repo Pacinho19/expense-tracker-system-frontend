@@ -1,4 +1,5 @@
 let host = 'http://localhost:8080';
+let categories = ["", "FOOD", "HEALTHCARE", "HOUSING", "TRANSPORTATION", "INVESTING", "ENTERTAINMENT", "OTHER"];
 
 function redirect(url, newTab = false) {
     var ua = navigator.userAgent.toLowerCase(),
@@ -35,6 +36,11 @@ function showErrorMessageUnauthorized() {
 
 function showErrorMessageForbidden() {
     alert('No permissions to access to this page!');
+}
+
+function showErrorMessage500() {
+    alert('Wystąpił problem z działaniem aplikacji. Zgłoś błąd do BINT lub spróbuj ponownie.');
+    redirect('/home.html');
 }
 
 function createRequest(path, type) {
@@ -273,4 +279,63 @@ function setElemetValueValue(id, value) {
     var element = document.getElementById(id);
     if (element != null && value != null && value.length > 0)
         element.value = value;
+}
+
+function saveExpense() {
+    let http = createRequest("/expense", "POST");
+
+    var expense = new Object();
+    expense.name = document.getElementById("expenseName").value;
+    expense.category = document.getElementById("expenseCategory").value;
+    expense.amount = document.getElementById("expenseAmount").value;
+    expense.date = document.getElementById("expenseDate").value;
+
+    var jsonObject = JSON.stringify(expense);
+    http.setRequestHeader("Content-Type", "application/json");
+
+    http.onreadystatechange = function () {
+        if (http.readyState === http.HEADERS_RECEIVED) {
+            loc = http.getResponseHeader("Location");
+            alert("Expense has been saved successfully!");
+            redirect("/expense.html?id=" + loc.split("/").pop());
+        } else if (http.readyState === 4 && http.status === 500) {
+            showErrorMessage500();
+        } else if (http.readyState === 4 && http.status === 401) {
+            showErrorMessageUnauthorized();
+        } else if (http.readyState === 4 && http.status === 403) {
+            showErrorMessageForbidden();
+        }
+    };
+    http.send(jsonObject);
+}
+
+function getExpense(id) {
+    let http = createRequest("/expense/" + id, "GET");
+
+
+    http.onreadystatechange = function () {
+        if (http.readyState === 4 && http.status === 200) {
+            let expense = JSON.parse(http.responseText);
+
+            setExpenseFields(expense);
+
+            document.getElementById("main").removeAttribute('hidden');
+            document.getElementById("loader").setAttribute('hidden', true);
+
+        } else if (http.readyState === 4 && http.status === 500) {
+            showErrorMessage500();
+        } else if (http.readyState === 4 && http.status === 401) {
+            showErrorMessageUnauthorized();
+        } else if (http.readyState === 4 && http.status === 403) {
+            showErrorMessageForbidden();
+        }
+    };
+    http.send();
+}
+
+function setExpenseFields(expense) {
+    document.getElementById("expenseName").innerHTML = expense.name;
+    document.getElementById("expenseCategory").innerHTML = expense.category;
+    document.getElementById("expenseAmount").innerHTML = expense.amount;
+    document.getElementById("expenseDate").innerHTML = expense.date;
 }

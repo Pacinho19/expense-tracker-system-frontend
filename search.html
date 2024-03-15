@@ -99,7 +99,7 @@
                     </h5>
                 </div>
 
-                <div id="collapseOne" class="collapse show" aria-labelledby="headingOne"
+                <div id="collapseOne" class="collapse" aria-labelledby="headingOne"
                     data-parent="#accordionExample">
                     <div class="card-body">
                         <div class="input-group mb-3">
@@ -111,18 +111,10 @@
                         </div>
 
                         <div class="input-group mb-3">
-                            <div class="input-OTHERgroup-prepend">
+                            <div class="input-group-prepend">
                                 <span class="input-group-text" id="inputGroup-sizing-default">Category</span>
                             </div>
                             <select class="custom-select" id="categorySearchParam">
-                                <option selected></option>
-                                <option value="FOOD">FOOD</option>
-                                <option value="HEALTHCARE">HEALTHCARE</option>
-                                <option value="HOUSING">HOUSING</option>
-                                <option value="TRANSPORTATION">TRANSPORTATION</option>
-                                <option value="INVESTING">INVESTING</option>
-                                <option value="ENTERTAINMENT">ENTERTAINMENT</option>
-                                <option value="OTHER">OTHER</option>
                             </select>
                         </div>
 
@@ -179,6 +171,13 @@
         });
     </script>
     <script src="app-assets/js/core/rest.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var options = '';
+        for (var i = 0; i < categories.length; i++) {
+            options += '<option value="' + categories[i] + '">' + categories[i] + '</option>';
+        }
+        $("#categorySearchParam").html(options);
+    </script>
 </body>
 
 </html>
