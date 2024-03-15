@@ -1,7 +1,7 @@
 let host = 'http://localhost:8080';
 let categories = ["", "FOOD", "HEALTHCARE", "HOUSING", "TRANSPORTATION", "INVESTING", "ENTERTAINMENT", "OTHER"];
 
-function getUrlParam(name){
+function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(name);
 }
@@ -429,24 +429,26 @@ function getExpensePage(page, size) {
 
 function createPagination(page) {
     container = document.getElementById("paginationContainer");
-    for(i=1 ;i<= page.totalPages;i++){
-        pageItem = createPageItem(i)
+    for (i = 1; i <= page.totalPages; i++) {
+        pageItem = createPageItem(i, i==page.currentPage)
         container.appendChild(pageItem);
     }
 }
 
-function createPageItem(value, link = true){
-   li =  document.createElement("li");
-   li.classList.add('page-item');
+function createPageItem(value, currentPage = false) {
+    li = document.createElement("li");
+    li.classList.add('page-item');
+    if(currentPage){
+        li.classList.add('active');
+    }
 
-   a =  document.createElement("a");
-   a.classList.add('page-link');
-   if(link){
+    a = document.createElement("a");
+    a.classList.add('page-link');
     size = getUrlParam('size');
-    a.href = "?page=" + value + (size!=null ? "&size=" + size : '');
-   }
-   a.innerHTML = value;
+    a.href = "?page=" + value + (size != null ? "&size=" + size : '');
 
-   li.appendChild(a);
-   return li;
+    a.innerHTML = value;
+
+    li.appendChild(a);
+    return li;
 }
