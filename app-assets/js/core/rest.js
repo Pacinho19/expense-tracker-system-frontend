@@ -1,6 +1,11 @@
 let host = 'http://localhost:8080';
 let categories = ["", "FOOD", "HEALTHCARE", "HOUSING", "TRANSPORTATION", "INVESTING", "ENTERTAINMENT", "OTHER"];
 
+function getUrlParam(name){
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
 function redirect(url, newTab = false) {
     var ua = navigator.userAgent.toLowerCase(),
         isIE = ua.indexOf('msie') !== -1,
@@ -177,9 +182,9 @@ function searchExpense(nameSearchParamName = "nameSearchParam") {
     redirect('/search.html' + params);
 }
 
-function search(params) {
+function search(params, showAll = false) {
     setSearchSettingsParams();
-    if (params.length == 0) {
+    if (params.length == 0 && !showAll) {
         document.getElementById("main").removeAttribute('hidden');
         document.getElementById("loader").setAttribute('hidden', true);
         return;
@@ -246,7 +251,7 @@ function createQueryParamBadge(element) {
 }
 
 function fillTable(expenses) {
-    var tbodyRef = document.getElementById('seachResultTable').getElementsByTagName('tbody')[0];
+    var tbodyRef = document.getElementById('expenseTable').getElementsByTagName('tbody')[0];
 
     for (let i = 0; i < expenses.length; i++) {
         var newRow = tbodyRef.insertRow();
@@ -264,15 +269,56 @@ function createCell(row, value) {
     newCell.appendChild(newText);
 }
 
-function setSearchSettingsParams() {
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
+function sortTable(n, type) {
+    var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+    table = document.getElementById("expenseTable");
+    switching = true;
+    dir = "asc";
+    while (switching) {
+        switching = false;
+        rows = table.rows;
+        for (i = 1; i < (rows.length - 1); i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("TD")[n];
+            y = rows[i + 1].getElementsByTagName("TD")[n];
+            if (dir == "asc") {
+                if (type !== 'number' && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                    shouldSwitch = true;
+                    break;
+                } else if (Number(x.innerHTML) > Number(y.innerHTML)) {
+                    shouldSwitch = true;
+                    break;
+                }
+            } else if (dir == "desc") {
+                if (type !== 'number' && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                    shouldSwitch = true;
+                    break;
+                } else if (Number(x.innerHTML) < Number(y.innerHTML)) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+        }
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount++;
+        } else {
 
-    setElemetValueValue("nameSearchParam", urlParams.get('name'));
-    setElemetValueValue("nameSearchParam2", urlParams.get('name'));
-    setElemetValueValue("categorySearchParam", urlParams.get('category'));
-    setElemetValueValue("startDateSearchParam", urlParams.get('startDate'));
-    setElemetValueValue("endDateSearchParam", urlParams.get('endDate'));
+            if (switchcount == 0 && dir == "asc") {
+                dir = "desc";
+                switching = true;
+            }
+        }
+    }
+}
+
+function setSearchSettingsParams() {
+    setElemetValueValue("nameSearchParam", getUrlParam('name'));
+    setElemetValueValue("nameSearchParam2", getUrlParam('name'));
+    setElemetValueValue("categorySearchParam", getUrlParam('category'));
+    setElemetValueValue("startDateSearchParam", getUrlParam('startDate'));
+    setElemetValueValue("endDateSearchParam", getUrlParam('endDate'));
 }
 
 function setElemetValueValue(id, value) {
@@ -338,4 +384,69 @@ function setExpenseFields(expense) {
     document.getElementById("expenseCategory").innerHTML = expense.category;
     document.getElementById("expenseAmount").innerHTML = expense.amount;
     document.getElementById("expenseDate").innerHTML = expense.date;
+}
+
+function getExpenses() {
+    let page = getUrlParam("page");
+    let size = getUrlParam("size");
+
+    if (page == null && size == null)
+        search([], true);
+
+    getExpensePage(page, size);
+}
+
+function getExpensePage(page, size) {
+    var paramsArr = [];
+    addUrlParam(paramsArr, page, "page");
+    addUrlParam(paramsArr, size, "size");
+    var params = (paramsArr.length > 0 ? '?' : '')
+        + paramsArr.join("&");
+
+    let http = createRequest("/expense" + params, "GET");
+    http.onreadystatechange = function () {
+        if (http.readyState === 4 && http.status === 200) {
+            let obj = JSON.parse(http.responseText);
+
+            document.getElementById("main").removeAttribute('hidden');
+            document.getElementById("loader").setAttribute('hidden', true);
+
+            fillTable(obj.expenses);
+            createPagination(obj);
+
+        } else if (http.readyState === 4 && http.status === 500) {
+            showErrorMessage500();
+        } else if (http.readyState === 4 && http.status === 401) {
+            showErrorMessageUnauthorized();
+            document.getElementById('login-error').removeAttribute('hidden');
+        } else if (http.readyState === 4 && http.status === 403) {
+            showErrorMessageForbidden();
+        }
+    };
+
+    http.send();
+}
+
+function createPagination(page) {
+    container = document.getElementById("paginationContainer");
+    for(i=1 ;i<= page.totalPages;i++){
+        pageItem = createPageItem(i)
+        container.appendChild(pageItem);
+    }
+}
+
+function createPageItem(value, link = true){
+   li =  document.createElement("li");
+   li.classList.add('page-item');
+
+   a =  document.createElement("a");
+   a.classList.add('page-link');
+   if(link){
+    size = getUrlParam('size');
+    a.href = "?page=" + value + (size!=null ? "&size=" + size : '');
+   }
+   a.innerHTML = value;
+
+   li.appendChild(a);
+   return li;
 }
