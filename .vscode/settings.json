@@ -1,0 +1,17 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3310,
+            "driver": "MariaDB",
+            "name": "expanse-tracker-system",
+            "database": "expense-tracker-system",
+            "username": "expense"
+        }
+    ]
+}
