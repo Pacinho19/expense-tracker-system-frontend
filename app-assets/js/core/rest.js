@@ -1,5 +1,6 @@
 let host = 'http://localhost:8080';
 let categories = ["", "FOOD", "HEALTHCARE", "HOUSING", "TRANSPORTATION", "INVESTING", "ENTERTAINMENT", "OTHER"];
+let exportFormates = ["JSON", "CSV"];
 
 function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -430,7 +431,7 @@ function getExpensePage(page, size) {
 function createPagination(page) {
     container = document.getElementById("paginationContainer");
     for (i = 1; i <= page.totalPages; i++) {
-        pageItem = createPageItem(i, i==page.currentPage)
+        pageItem = createPageItem(i, i == page.currentPage)
         container.appendChild(pageItem);
     }
 }
@@ -438,7 +439,7 @@ function createPagination(page) {
 function createPageItem(value, currentPage = false) {
     li = document.createElement("li");
     li.classList.add('page-item');
-    if(currentPage){
+    if (currentPage) {
         li.classList.add('active');
     }
 
@@ -451,4 +452,56 @@ function createPageItem(value, currentPage = false) {
 
     li.appendChild(a);
     return li;
+}
+
+function exportData() {
+    format = document.getElementById("exportFormat").value;
+    var params = '?format=' + format;
+
+    let http = createRequest("/expense/export" + params, "GET");
+    http.setRequestHeader('responseType', "blob");
+    http.onreadystatechange = function () {
+        if (http.readyState === 4 && http.status === 200) {
+            showExportSuccessAlert(http);
+        } else if (http.readyState === 4 && http.status === 500) {
+            showErrorMessage500();
+        } else if (http.readyState === 4 && http.status === 401) {
+            showErrorMessageUnauthorized();
+            document.getElementById('login-error').removeAttribute('hidden');
+        } else if (http.readyState === 4 && http.status === 403) {
+            showErrorMessageForbidden();
+        }
+    };
+
+    http.send();
+
+}
+
+function showExportSuccessAlert(request) {
+    alertDiv = document.getElementById('exportSuccessAlert');
+    alertDiv.style.display = 'block';
+
+    downloadDiv = document.getElementById('downloadDiv');
+    downloadDiv.innerHTML = '';
+
+    var blob = new Blob([request.response], { type: 'text/plain' });
+    var link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.innerHTML = 'Download';
+    link.download = getFileName(request);
+
+    downloadDiv.appendChild(link);
+}
+
+function getFileName(request) {
+    var filename = "";
+    var disposition = request.getResponseHeader('Content-Disposition');
+    if (disposition && disposition.indexOf('attachment') !== -1) {
+        var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        var matches = filenameRegex.exec(disposition);
+        if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+        }
+    }
+    return filename;
 }
